@@ -2,9 +2,13 @@
 
 A lightweight web tool that turns a shift's **volume forecast** and **planned rates** into the **headcount needed per process path**, then shows where the building is short, where it is overstaffed, and which path will limit output.
 
-**Live demo:** https://ShadLabs.github.io/labor-planning-calculator/
+**Live demo:** https://YOUR-USERNAME.github.io/labor-planning-calculator/
 
 ![Screenshot](docs/screenshot.png)
+
+**Available in English and Arabic.** Switch with the button at the top, or open the Arabic version directly: `https://YOUR-USERNAME.github.io/labor-planning-calculator/?lang=ar`
+
+![Arabic screenshot](docs/screenshot-ar.png)
 
 ## The problem
 
@@ -20,7 +24,8 @@ I worked for almost two years as a Pack and Outbound Process Assistant. I built 
 - Flags each path as **Short**, **Balanced**, **Surplus**, or **Overstaffed**
 - Identifies the **bottleneck path** and the **maximum units** the shift can ship with the current roster
 - Suggests **flex moves** from surplus paths to short paths, and what to do with any leftover gap
-- Lets you **export to CSV** and **print** the plan
+- Works in **English and Arabic**, with a full right-to-left layout in Arabic
+- Lets you **export to CSV** (opens correctly in Excel in both languages) and **print** the plan
 - Saves your inputs in the browser automatically
 
 ## How it calculates
@@ -47,9 +52,11 @@ labor-planning-calculator/
 ├── css/
 │   └── style.css       # styling, light and dark mode, print layout
 ├── js/
-│   └── app.js          # calculations, flex logic, CSV export, saved inputs
+│   ├── app.js          # calculations, flex logic, CSV export, saved inputs
+│   └── i18n.js         # English and Arabic text
 ├── docs/
-│   └── screenshot.png  # image used in this README
+│   ├── screenshot.png     # English screenshot
+│   └── screenshot-ar.png  # Arabic screenshot
 ├── LICENSE
 └── README.md
 ```
@@ -66,8 +73,7 @@ All rates, volumes, and headcounts are **illustrative sample data**. They are no
 ## Ideas for next version
 
 - Hourly plan with a break schedule per wave
-- Arabic / English toggle
 - Compare plan vs. actual at end of shift
 
 ---
-Built by **Shadrack Kpani Odametey** · [LinkedIn](https://www.linkedin.com/in/Shadrack-Odametey)
+Built by **Your Name** · [LinkedIn](https://www.linkedin.com/in/your-profile)
