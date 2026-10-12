@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Labor Planning Calculator</title>
+<meta name="description" content="Outbound shift headcount planner: turn a volume forecast and planned rates into headcount per process path, find the bottleneck, and get flex suggestions.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <div class="stripe" aria-hidden="true"></div>
+      <div>
+        <h1>Labor Planning Calculator</h1>
+        <p class="sub">Outbound shift headcount planner · sample data only</p>
+      </div>
+    </div>
+    <div class="actions">
+      <button id="exportCsv" class="primary">Export CSV</button>
+      <button id="printBtn">Print plan</button>
+      <button id="resetBtn">Reset to sample</button>
+    </div>
+  </header>
+
+  <section>
+    <h2><span class="num">01</span>Shift setup</h2>
+    <p class="hint">Forecast and shift assumptions. Changes recalculate instantly.</p>
+    <div class="grid">
+      <div><label for="volume">Forecast volume (units)</label><input id="volume" type="number" min="0" step="500"></div>
+      <div><label for="shift">Shift length (hours)</label><input id="shift" type="number" min="0" max="24" step="0.5"></div>
+      <div><label for="breakMin">Breaks &amp; meetings (min)</label><input id="breakMin" type="number" min="0" step="5"></div>
+      <div><label for="indirect">Ramp-up &amp; indirect time (%)</label><input id="indirect" type="number" min="0" max="90" step="1"></div>
+      <div><label for="absent">Expected absenteeism (%)</label><input id="absent" type="number" min="0" max="90" step="1"></div>
+    </div>
+    <p class="derived">Productive hours per associate: <b id="prodHrs">–</b></p>
+  </section>
+
+  <section>
+    <h2><span class="num">02</span>Process paths</h2>
+    <p class="hint">Volume share = % of forecast units that flow through that path. Rate = planned units per labor hour (UPH).</p>
+    <div class="table-scroll">
+      <table class="paths">
+        <thead><tr><th>Path</th><th>Volume share %</th><th>Planned rate (UPH)</th><th>Available HC</th><th></th></tr></thead>
+        <tbody id="pathRows"></tbody>
+      </table>
+    </div>
+    <button id="addPath" class="add">+ Add process path</button>
+  </section>
+
+  <section>
+    <h2><span class="num">03</span>Headcount plan</h2>
+    <p class="hint">Required headcount per path, against what you have on the roster.</p>
+    <div class="cards" id="cards"></div>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Path</th><th class="n">Units</th><th class="n">Labor hrs</th><th class="n">HC needed</th><th class="n">HC to schedule</th><th class="n">Available</th><th>Status</th></tr></thead>
+        <tbody id="resultRows"></tbody>
+        <tfoot id="resultFoot"></tfoot>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">04</span>Flex suggestions</h2>
+    <p class="hint">Moves surplus associates to short paths, largest gaps first.</p>
+    <ul class="flex" id="flexList"></ul>
+    <p class="note">Only flex associates who are trained and certified on the receiving path.</p>
+  </section>
+
+  <section>
+    <details>
+      <summary>How the numbers are calculated</summary>
+      <ol>
+        <li><b>Productive hours</b> = (shift length − breaks) × (1 − indirect %)</li>
+        <li><b>Units per path</b> = forecast × volume share %</li>
+        <li><b>Labor hours</b> = units ÷ planned rate</li>
+        <li><b>HC needed</b> = labor hours ÷ productive hours per associate</li>
+        <li><b>HC to schedule</b> = HC needed ÷ (1 − absenteeism %), rounded up</li>
+        <li><b>Gap</b> = available HC − HC to schedule</li>
+        <li><b>Max shift output</b> per path = available HC × show-up rate × productive hours × rate ÷ volume share. The lowest one is the <b>bottleneck</b>: the whole building can't ship more than that path can process.</li>
+      </ol>
+    </details>
+  </section>
+
+  <footer>Built by <b>Your Name</b> · All figures are illustrative sample data, not from any real site.</footer>
+</div>
+
+<script src="js/app.js" defer></script>
+</body>
+</html>
