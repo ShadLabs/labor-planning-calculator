@@ -2,13 +2,13 @@
 
 A lightweight web tool that turns a shift's **volume forecast** and **planned rates** into the **headcount needed per process path**, then shows where the building is short, where it is overstaffed, and which path will limit output.
 
-**Live demo:** https://YOUR-USERNAME.github.io/labor-planning-calculator/
+**Live demo:** https://ShadLabs.github.io/labor-planning-calculator/
 
-![Screenshot](docs/screenshot.png)
+![Screenshot](screenshot.png)
 
-**Available in English and Arabic.** Switch with the button at the top, or open the Arabic version directly: `https://YOUR-USERNAME.github.io/labor-planning-calculator/?lang=ar`
+**Available in English and Arabic.** Switch with the button at the top, or open the Arabic version directly: `https://ShadLabs.github.io/labor-planning-calculator/?lang=ar`
 
-![Arabic screenshot](docs/screenshot-ar.png)
+![Arabic screenshot](screenshot-ar.png)
 
 ## The problem
 
@@ -76,4 +76,4 @@ All rates, volumes, and headcounts are **illustrative sample data**. They are no
 - Compare plan vs. actual at end of shift
 
 ---
-Built by **Your Name** · [LinkedIn](https://www.linkedin.com/in/your-profile)
+Built by **Shadrack Kpani Odametey** · [LinkedIn](https://www.linkedin.com/in/Shadrack-Odametey)
