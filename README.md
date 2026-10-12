@@ -4,11 +4,11 @@ A lightweight web tool that turns a shift's **volume forecast** and **planned ra
 
 **Live demo:** https://ShadLabs.github.io/labor-planning-calculator/
 
-![Screenshot](screenshot.png)
+![Screenshot](docs/screenshot.png)
 
 **Available in English and Arabic.** Switch with the button at the top, or open the Arabic version directly: `https://ShadLabs.github.io/labor-planning-calculator/?lang=ar`
 
-![Arabic screenshot](screenshot-ar.png)
+![Arabic screenshot](docs/screenshot-ar.png)
 
 ## The problem
 
