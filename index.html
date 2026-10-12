@@ -28,11 +28,22 @@
     </div>
   </header>
 
+  <section class="overview" id="overview" aria-live="polite">
+    <div class="ov-head">
+      <h2><span class="num">00</span><span data-i18n="s0">Shift at a glance</span></h2>
+      <a href="#plan" class="see-plan" data-i18n="seePlan">See full plan ↓</a>
+    </div>
+    <div class="verdict" id="verdict"></div>
+    <div class="cards" id="cards"></div>
+    <div class="actions-box" id="topActions"></div>
+  </section>
+
   <section>
     <h2><span class="num">01</span><span data-i18n="s1">Shift setup</span></h2>
     <p class="hint" data-i18n="s1hint">Forecast and shift assumptions. Changes recalculate instantly.</p>
     <div class="grid">
       <div><label for="volume" data-i18n="volume">Forecast volume (units)</label><input id="volume" type="number" min="0" step="500"></div>
+      <div><label for="totalHc" data-i18n="totalHc">Total outbound HC on shift</label><input id="totalHc" type="number" min="0" step="1"></div>
       <div><label for="shift" data-i18n="shift">Shift length (hours)</label><input id="shift" type="number" min="0" max="24" step="0.5"></div>
       <div><label for="breakMin" data-i18n="breakMin">Breaks &amp; meetings (min)</label><input id="breakMin" type="number" min="0" step="5"></div>
       <div><label for="indirect" data-i18n="indirect">Ramp-up &amp; indirect time (%)</label><input id="indirect" type="number" min="0" max="90" step="1"></div>
@@ -50,13 +61,13 @@
         <tbody id="pathRows"></tbody>
       </table>
     </div>
+    <p class="assign-line" id="assignLine"></p>
     <button id="addPath" class="add" data-i18n="addPath">+ Add process path</button>
   </section>
 
-  <section>
+  <section id="plan">
     <h2><span class="num">03</span><span data-i18n="s3">Headcount plan</span></h2>
     <p class="hint" data-i18n="s3hint">Required headcount per path, against what you have on the roster.</p>
-    <div class="cards" id="cards"></div>
     <div class="table-scroll">
       <table>
         <thead><tr><th data-i18n="thPath">Path</th><th class="n" data-i18n="thUnits">Units</th><th class="n" data-i18n="thHrs">Labor hrs</th><th class="n" data-i18n="thNeeded">HC needed</th><th class="n" data-i18n="thSched">HC to schedule</th><th class="n" data-i18n="thAvailShort">Available</th><th data-i18n="thStatus">Status</th></tr></thead>

@@ -6,7 +6,7 @@ A lightweight web tool that turns a shift's **volume forecast** and **planned ra
 
 ![Screenshot](docs/screenshot.png)
 
-**Available in English and Arabic.** Switch with the button at the top, or open the Arabic version directly: `https://ShadLabs.github.io/labor-planning-calculator/?lang=ar`
+**Available in English and Arabic.** Switch with the button at the top, or open the Arabic version directly: `https://ShadLabs.github.io/labor-planning-calculator/`
 
 ![Arabic screenshot](docs/screenshot-ar.png)
 
@@ -18,12 +18,15 @@ I worked for almost two years as a Pack and Outbound Process Assistant. I built 
 
 ## What it does
 
+- Opens with a **Shift at a glance** overview: a plain-language verdict (On track, Rebalance needed, or At risk), max shift output against forecast, net gap, output if rebalanced, and the top actions to take
+- Takes the **total outbound headcount on shift** and shows how many are assigned to paths and how many are still unassigned
 - Calculates **productive hours per associate** after breaks, meetings, and ramp-up/indirect time
 - Converts forecast units into **labor hours and headcount** for each process path (Pick, Pack, SLAM, Ship Dock, or any paths you add)
 - Adds an **absenteeism buffer** so you schedule enough people for who actually shows up
 - Flags each path as **Short**, **Balanced**, **Surplus**, or **Overstaffed**
 - Identifies the **bottleneck path** and the **maximum units** the shift can ship with the current roster
-- Suggests **flex moves** from surplus paths to short paths, and what to do with any leftover gap
+- Suggests **flex moves**, filling short paths from the unassigned pool first, then from surplus paths
+- Shows the **output if rebalanced**: what the same people could ship if placed perfectly
 - Works in **English and Arabic**, with a full right-to-left layout in Arabic
 - Lets you **export to CSV** (opens correctly in Excel in both languages) and **print** the plan
 - Saves your inputs in the browser automatically
@@ -37,8 +40,10 @@ I worked for almost two years as a Pack and Outbound Process Assistant. I built 
 | Labor hours | units ÷ planned rate (UPH) |
 | HC needed | labor hours ÷ productive hours |
 | HC to schedule | HC needed ÷ (1 − absenteeism %), rounded up |
-| Gap | available HC − HC to schedule |
-| Max output (bottleneck) | available HC × show-up rate × productive hours × rate ÷ volume share |
+| Path gap | assigned HC − HC to schedule |
+| Net gap | total outbound HC on shift − total HC to schedule |
+| Max output (bottleneck) | assigned HC × show-up rate × productive hours × rate ÷ volume share |
+| Output if rebalanced | total HC × show-up rate × productive hours ÷ labor hours needed per unit across all paths |
 
 ## Tech
 

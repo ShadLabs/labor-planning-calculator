@@ -65,6 +65,36 @@ summary{cursor:pointer;font-weight:600}
 details ol{padding-inline-start:20px} details li{margin:6px 0}
 code{font-family:"IBM Plex Mono",monospace;font-size:.85em;background:var(--surface-2);padding:1px 5px;border-radius:4px}
 footer{color:var(--muted);font-size:.82rem;text-align:center;margin-top:24px}
+/* Shift at a glance */
+.overview{border-width:1px;padding:18px 18px 16px}
+.ov-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px}
+.ov-head h2{margin:0}
+.see-plan{color:var(--muted);font-size:.86rem;text-decoration:none;white-space:nowrap}
+.see-plan:hover{color:var(--text);text-decoration:underline}
+.verdict{display:flex;gap:12px;align-items:flex-start;border-radius:var(--radius);padding:12px 14px;margin-bottom:14px;border:1px solid var(--border);background:var(--surface-2);border-inline-start:5px solid var(--muted)}
+.verdict .dot{flex:none;width:10px;height:10px;border-radius:50%;margin-top:7px;background:var(--muted)}
+.verdict .vt{font-weight:700;font-size:1.05rem}
+.verdict p{margin:2px 0 0}
+.verdict .warn-line{margin-top:6px;color:var(--bad);font-size:.88rem}
+.verdict.ok{background:var(--ok-bg);border-color:var(--ok)} .verdict.ok .dot{background:var(--ok)} .verdict.ok .vt{color:var(--ok)}
+.verdict.warn{background:var(--warn-bg);border-color:var(--warn)} .verdict.warn .dot{background:var(--warn)} .verdict.warn .vt{color:var(--warn)}
+.verdict.bad{background:var(--bad-bg);border-color:var(--bad)} .verdict.bad .dot{background:var(--bad)} .verdict.bad .vt{color:var(--bad)}
+.overview .cards{margin-bottom:0}
+.card .s b{color:var(--text)}
+.card .s + .s{margin-top:2px}
+.meter{height:6px;border-radius:999px;background:var(--border);overflow:hidden;margin:8px 0 6px}
+.meter span{display:block;height:100%;border-radius:999px;background:var(--muted)}
+.card.ok .meter span{background:var(--ok)} .card.bad .meter span{background:var(--bad)} .card.warn .meter span{background:var(--warn)}
+.card.warn .v{color:var(--warn)}
+.actions-box{margin-top:14px}
+.actions-box:empty{display:none}
+.actions-box h3{font-size:.82rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin:0 0 4px}
+html[lang="ar"] .actions-box h3{text-transform:none;letter-spacing:0}
+.actions-box ul{margin:0;padding-inline-start:20px} .actions-box li{margin:4px 0}
+.assign-line{margin:12px 0 0;font-size:.88rem;color:var(--muted)}
+.assign-line b{color:var(--text);font-family:"IBM Plex Mono",monospace}
+.assign-line.over b:last-child{color:var(--bad);font-family:inherit}
+
 /* Arabic / right-to-left */
 html[lang="ar"] body,html[lang="ar"] input[type=text]{font-family:"IBM Plex Sans Arabic","IBM Plex Sans",system-ui,"Segoe UI",Tahoma,sans-serif}
 html[lang="ar"] th,html[lang="ar"] .card .k{text-transform:none;letter-spacing:0}

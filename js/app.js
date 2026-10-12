@@ -1,7 +1,7 @@
 const KEY = 'labor-planner-v1';
 const LANG_KEY = 'labor-planner-lang';
 const SAMPLE = {
-  volume: 45000, shift: 10, breakMin: 60, indirect: 10, absent: 8,
+  volume: 45000, totalHc: 118, shift: 10, breakMin: 60, indirect: 10, absent: 8,
   paths: [
     { name: 'Pick',      share: 100, rate: 110, hc: 60 },
     { name: 'Pack',      share: 100, rate: 160, hc: 40 },
@@ -11,10 +11,19 @@ const SAMPLE = {
 };
 const clone = o => JSON.parse(JSON.stringify(o));
 function load() {
-  try { const s = JSON.parse(localStorage.getItem(KEY)); if (s && Array.isArray(s.paths)) return s; } catch (e) {}
+  try {
+    const s = JSON.parse(localStorage.getItem(KEY));
+    if (s && Array.isArray(s.paths)) {
+      // Older saved plans had no total headcount: start it at the number already assigned.
+      if (s.totalHc === undefined) s.totalHc = s.paths.reduce((a, p) => a + (Math.floor(parseFloat(p.hc)) || 0), 0);
+      return s;
+    }
+  } catch (e) {}
   return clone(SAMPLE);
 }
 function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
+
+const $ = id => document.getElementById(id);
 
 // ---- Language ----
 // Priority: ?lang=ar / ?lang=en in the URL, then the saved choice, then English.
@@ -43,7 +52,6 @@ function applyLang() {
 }
 
 let state = load();
-const $ = id => document.getElementById(id);
 const num = (v, min, max) => {
   let n = parseFloat(v); if (!isFinite(n)) n = 0;
   if (min !== undefined) n = Math.max(min, n);
@@ -52,11 +60,11 @@ const num = (v, min, max) => {
 };
 // Western digits in both languages, as used across Saudi business documents.
 const fmt = (n, d = 0) => n.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
+const signed = n => (n > 0 ? '+' : '') + n;
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-// Keeps numbers like "+5" or "38,750" reading correctly inside Arabic sentences.
-const ltr = v => `<bdi dir="ltr">${v}</bdi>`;
+const nm = s => `<bdi>${esc(s)}</bdi>`;
 
-const SHIFT_FIELDS = ['volume', 'shift', 'breakMin', 'indirect', 'absent'];
+const SHIFT_FIELDS = ['volume', 'totalHc', 'shift', 'breakMin', 'indirect', 'absent'];
 function fillShift() { SHIFT_FIELDS.forEach(f => { $(f).value = state[f]; }); }
 SHIFT_FIELDS.forEach(f => $(f).addEventListener('input', e => { state[f] = e.target.value; update(); }));
 
@@ -104,7 +112,24 @@ function calc() {
     const capacity = (share > 0 && rate > 0) ? hc * showUp * prodHrs * rate / (share / 100) : Infinity;
     return { name, share, rate, hc, vol, laborHrs, needed, sched, gap, capacity, invalid };
   });
-  return { volume, prodHrs, showUp, rows };
+
+  const valid = rows.filter(x => !x.invalid);
+  const assigned = valid.reduce((a, x) => a + x.hc, 0);
+  const total = Math.floor(num(state.totalHc, 0));
+  const unassigned = total - assigned;
+  const tSched = valid.reduce((a, x) => a + x.sched, 0);
+  const net = total - tSched;
+
+  // Bottleneck with the current assignment.
+  const caps = valid.filter(x => isFinite(x.capacity));
+  const bn = caps.length ? caps.reduce((a, b) => (b.capacity < a.capacity ? b : a)) : null;
+  const curCap = bn ? Math.floor(bn.capacity) : 0;
+
+  // Best possible output if every person on shift were placed where needed.
+  const hrsPerUnit = valid.reduce((a, x) => a + (x.share > 0 && x.rate > 0 ? (x.share / 100) / x.rate : 0), 0);
+  const rebCap = hrsPerUnit > 0 ? Math.floor(total * showUp * prodHrs / hrsPerUnit) : 0;
+
+  return { volume, prodHrs, showUp, rows, valid, assigned, total, unassigned, tSched, net, bn, curCap, rebCap, hrsPerUnit };
 }
 
 function statusBadge(r) {
@@ -115,15 +140,91 @@ function statusBadge(r) {
   return `<span class="badge ok">${t('balanced')}</span>`;
 }
 
+// Fill short paths from the unassigned pool first, then from surplus paths.
+function flexPlan(r) {
+  const moves = [], notes = [];
+  let pool = Math.max(0, r.unassigned);
+  const surplus = r.valid.filter(x => x.gap > 0).map(x => ({ name: x.name, n: x.gap })).sort((a, b) => b.n - a.n);
+  const short = r.valid.filter(x => x.gap < 0).map(x => ({ name: x.name, n: -x.gap })).sort((a, b) => b.n - a.n);
+  for (const d of short) {
+    if (pool > 0) {
+      const m = Math.min(pool, d.n);
+      moves.push(t('flexPool')(m, nm(d.name)));
+      pool -= m; d.n -= m;
+    }
+    for (const s of surplus) {
+      if (d.n === 0) break;
+      if (s.n === 0) continue;
+      const m = Math.min(s.n, d.n);
+      moves.push(t('flexMove')(m, nm(s.name), nm(d.name)));
+      s.n -= m; d.n -= m;
+    }
+  }
+  const stillShort = short.filter(d => d.n > 0).map(d =>
+    `<span class="badge bad">${t('flexStillShort')(d.n)}</span> ${t('flexStillShortTip')(nm(d.name))}`);
+  if (pool > 0) notes.push(`<span class="badge ok">${t('flexPoolLeft')(pool)}</span> ${t('flexPoolLeftTip')}`);
+  surplus.filter(s => s.n > 0).forEach(s =>
+    notes.push(`<span class="badge ok">${t('flexSpare')(s.n)}</span> ${t('flexSpareTip')(nm(s.name))}`));
+  return { moves, stillShort, notes };
+}
+
+function renderOverview(r, flex) {
+  const pct = cap => (r.volume > 0 ? Math.floor(cap / r.volume * 100) : 0);
+  const has = !!r.bn && r.volume > 0;
+  let cls = '', title, text;
+  if (!has) {
+    title = t('vNoDataTitle'); text = t('vNoData');
+  } else if (r.curCap >= r.volume) {
+    cls = 'ok'; title = t('vOkTitle');
+    text = t('vOk')(fmt(r.curCap), pct(r.curCap), fmt(r.volume), signed(r.net));
+  } else if (r.rebCap >= r.volume) {
+    cls = 'warn'; title = t('vRebalTitle');
+    text = t('vRebal')(nm(r.bn.name), fmt(r.curCap), pct(r.curCap), signed(r.net));
+  } else {
+    cls = 'bad'; title = t('vShortTitle');
+    // People needed so that rebalanced output reaches the forecast.
+    const needTotal = Math.ceil(r.volume * r.hrsPerUnit / (r.showUp * r.prodHrs) - 1e-9);
+    const extra = Math.max(1, needTotal - r.total, -r.net);
+    text = t('vShort')(fmt(r.rebCap), pct(r.rebCap), extra);
+  }
+  const over = r.unassigned < 0 ? `<div class="warn-line">${t('vOverAssigned')(r.assigned, r.total)}</div>` : '';
+  $('verdict').className = 'verdict ' + cls;
+  $('verdict').innerHTML = `<span class="dot" aria-hidden="true"></span><div><div class="vt">${title}</div><p>${text}</p>${over}</div>`;
+
+  const meter = cap => `<div class="meter"><span style="width:${Math.min(100, pct(cap))}%"></span></div>`;
+  const curOk = r.curCap >= r.volume, rebOk = r.rebCap >= r.volume;
+  $('cards').innerHTML = has ? `
+    <div class="card ${curOk ? 'ok' : 'bad'}"><div class="k">${t('kMax')}</div>
+      <div class="v">${fmt(r.curCap)}</div>${meter(r.curCap)}
+      <div class="s">${t('kMaxSub')(pct(r.curCap), fmt(r.volume))}</div>
+      <div class="s">${t('kBottleneck')(nm(r.bn.name))}</div></div>
+    <div class="card ${r.net < 0 ? 'bad' : 'ok'}"><div class="k">${t('kGap')}</div>
+      <div class="v"><bdi dir="ltr">${signed(r.net)}</bdi></div>
+      <div class="s">${t('kGapSub')(r.total, r.tSched)}</div></div>
+    <div class="card ${rebOk ? 'ok' : 'bad'}"><div class="k">${t('kReb')}</div>
+      <div class="v">${fmt(r.rebCap)}</div>${meter(r.rebCap)}
+      <div class="s">${rebOk ? t('covered') : t('notCovered')} · ${t('kRebSub')(r.total)}</div></div>
+    <div class="card ${r.unassigned < 0 ? 'bad' : (r.unassigned > 0 ? 'warn' : '')}"><div class="k">${t('kUnassigned')}</div>
+      <div class="v">${Math.max(0, r.unassigned)}</div>
+      <div class="s">${r.unassigned < 0 ? t('kOverSub')(-r.unassigned) : t('kUnassignedSub')(r.assigned, r.total)}</div></div>` : '';
+
+  const top = [...flex.moves, ...flex.stillShort].slice(0, 3);
+  $('topActions').innerHTML = has && top.length
+    ? `<h3>${t('actionsTitle')}</h3><ul>${top.map(i => `<li>${i}</li>`).join('')}</ul>` : '';
+}
+
 function update() {
   save();
   const r = calc();
-  const valid = r.rows.filter(x => !x.invalid);
   $('prodHrs').textContent = `${fmt(r.prodHrs, 2)} ${t('hoursUnit')}`;
+
+  const al = $('assignLine');
+  al.className = 'assign-line' + (r.unassigned < 0 ? ' over' : '');
+  al.innerHTML = r.unassigned < 0 ? t('assignOver')(r.assigned, r.total, -r.unassigned) : t('assignLine')(r.assigned, r.total, r.unassigned);
 
   $('resultRows').innerHTML = r.rows.map(x => `
     <tr>
-      <td><bdi>${esc(x.name)}</bdi></td>
+      <td>${nm(x.name)}</td>
       <td class="n">${fmt(x.vol)}</td>
       <td class="n">${x.invalid ? '–' : fmt(x.laborHrs, 1)}</td>
       <td class="n">${x.invalid ? '–' : fmt(x.needed, 1)}</td>
@@ -132,52 +233,26 @@ function update() {
       <td>${statusBadge(x)}</td>
     </tr>`).join('') || `<tr><td colspan="7">${t('noPaths')}</td></tr>`;
 
-  const tSched = valid.reduce((a, x) => a + x.sched, 0);
-  const tHc = valid.reduce((a, x) => a + x.hc, 0);
-  const tHrs = valid.reduce((a, x) => a + x.laborHrs, 0);
-  const tNeed = valid.reduce((a, x) => a + x.needed, 0);
-  const net = tHc - tSched;
-  $('resultFoot').innerHTML = valid.length ? `
+  const tHrs = r.valid.reduce((a, x) => a + x.laborHrs, 0);
+  const tNeed = r.valid.reduce((a, x) => a + x.needed, 0);
+  $('resultFoot').innerHTML = r.valid.length ? `
     <tr><td>${t('total')}</td><td class="n"></td><td class="n">${fmt(tHrs, 1)}</td><td class="n">${fmt(tNeed, 1)}</td>
-    <td class="n">${tSched}</td><td class="n">${tHc}</td><td></td></tr>` : '';
+    <td class="n">${r.tSched}</td><td class="n">${r.assigned}</td><td></td></tr>` : '';
 
-  const caps = valid.filter(x => isFinite(x.capacity));
-  const bn = caps.length ? caps.reduce((a, b) => (b.capacity < a.capacity ? b : a)) : null;
-  const canClear = bn ? bn.capacity >= r.volume : false;
-  $('cards').innerHTML = `
-    <div class="card"><div class="k">${t('cSched')}</div><div class="v">${tSched}</div><div class="s">${t('cSchedSub')(fmt(100 - r.showUp * 100))}</div></div>
-    <div class="card"><div class="k">${t('cAvail')}</div><div class="v">${tHc}</div><div class="s">${t('cAvailSub')(valid.length)}</div></div>
-    <div class="card ${net < 0 ? 'bad' : 'ok'}"><div class="k">${t('cGap')}</div><div class="v">${ltr((net > 0 ? '+' : '') + net)}</div><div class="s">${net < 0 ? t('cGapShort') : t('cGapOk')}</div></div>
-    <div class="card ${bn ? (canClear ? 'ok' : 'bad') : ''}"><div class="k">${t('cMax')}</div>
-      <div class="v">${bn ? fmt(Math.floor(bn.capacity)) : '–'}</div>
-      <div class="s">${bn ? `${t('cBottleneck')(`<bdi>${esc(bn.name)}</bdi>`)} · ${canClear ? t('cCovered') : t('cNotCovered')}` : t('cNoData')}</div></div>`;
-
-  const surplus = valid.filter(x => x.gap > 0).map(x => ({ name: x.name, n: x.gap })).sort((a, b) => b.n - a.n);
-  const short = valid.filter(x => x.gap < 0).map(x => ({ name: x.name, n: -x.gap })).sort((a, b) => b.n - a.n);
-  const nm = s => `<bdi>${esc(s)}</bdi>`;
-  const items = [];
-  for (const d of short) {
-    for (const s of surplus) {
-      if (d.n === 0) break;
-      if (s.n === 0) continue;
-      const m = Math.min(s.n, d.n);
-      items.push(t('flexMove')(m, nm(s.name), nm(d.name)));
-      s.n -= m; d.n -= m;
-    }
-  }
-  short.filter(d => d.n > 0).forEach(d =>
-    items.push(`<span class="badge bad">${t('flexStillShort')(d.n)}</span> ${t('flexStillShortTip')(nm(d.name))}`));
-  surplus.filter(s => s.n > 0).forEach(s =>
-    items.push(`<span class="badge ok">${t('flexSpare')(s.n)}</span> ${t('flexSpareTip')(nm(s.name))}`));
-  if (!items.length) items.push(valid.length ? t('flexBalanced') : t('flexEmpty'));
+  const flex = flexPlan(r);
+  const items = [...flex.moves, ...flex.stillShort, ...flex.notes];
+  if (!items.length) items.push(r.valid.length ? t('flexBalanced') : t('flexEmpty'));
   $('flexList').innerHTML = items.map(i => `<li>${i}</li>`).join('');
+
+  renderOverview(r, flex);
 }
 
 $('exportCsv').addEventListener('click', () => {
   const r = calc();
   const q = v => `"${String(v).replace(/"/g, '""')}"`;
   const lines = [
-    [t('csvForecast'), r.volume], [t('csvProd'), r.prodHrs.toFixed(2)], [],
+    [t('csvForecast'), r.volume], [t('csvTotal'), r.total], [t('csvProd'), r.prodHrs.toFixed(2)],
+    [t('csvMax'), r.curCap], [t('csvReb'), r.rebCap], [t('csvNet'), r.net], [],
     t('csvHeader'),
     ...r.rows.map(x => [x.name, x.share, x.rate, Math.round(x.vol), x.laborHrs.toFixed(1), x.needed.toFixed(1), x.invalid ? '' : x.sched, x.hc, x.invalid ? '' : x.gap])
   ];
